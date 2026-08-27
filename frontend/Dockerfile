@@ -1,8 +1,7 @@
+# Build stage
 FROM node:18 AS build
 
 WORKDIR /app
-
-ENV NODE_OPTIONS=--openssl-legacy-provider
 
 COPY package*.json ./
 
@@ -13,11 +12,13 @@ COPY . .
 RUN npm run build
 
 
+# Production stage
 FROM nginx:alpine
 
-COPY --from=build /app/build /usr/share/nginx/html
+# Update Alpine security packages
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
 

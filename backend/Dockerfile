@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:18
 
 WORKDIR /app
 RUN apt-get update \
