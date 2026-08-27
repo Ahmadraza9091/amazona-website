@@ -36,5 +36,23 @@ jobs:
         run: npm run build
 
       - name: Build Docker images
-        working-directory: .
         run: docker compose build
+
+      - name: Start application
+        run: docker compose up -d
+
+      - name: Check running containers
+        run: docker compose ps
+
+      - name: Wait for application
+        run: sleep 15
+
+      - name: Test frontend
+        run: curl --fail http://localhost:3000
+
+      - name: Test backend
+        run: curl --fail http://localhost:5000/api/products
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
