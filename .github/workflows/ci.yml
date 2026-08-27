@@ -16,43 +16,88 @@ jobs:
 
     steps:
 
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 16
 
+
+      # 3. Backend dependencies
       - name: Install backend dependencies
         run: npm install
 
+
+      # 4. Frontend dependencies
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
 
+
+      # 5. Frontend build
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
+
+      # 6. Build Docker images
       - name: Build Docker images
         run: docker compose build
 
+
+      # 7. Trivy - Scan Backend Image
+      - name: Trivy scan backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: node-react-ecommerce-backend:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+
+      # 8. Trivy - Scan Frontend Image
+      - name: Trivy scan frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: node-react-ecommerce-frontend:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+
+      # 9. Start application
       - name: Start application
         run: docker compose up -d
 
+
+      # 10. Check containers
       - name: Check running containers
         run: docker compose ps
 
+
+      # 11. Wait for application
       - name: Wait for application
         run: sleep 15
 
+
+      # 12. Test frontend
       - name: Test frontend
         run: curl --fail http://localhost:3000
 
+
+      # 13. Test backend
       - name: Test backend
         run: curl --fail http://localhost:5000/api/products
 
+
+      # 14. Stop containers
       - name: Stop containers
         if: always()
         run: docker compose down
