@@ -76,6 +76,7 @@ jobs:
           ignore-unfixed: true
           severity: CRITICAL,HIGH
           scanners: vuln
+          skip-dirs: "**/node_modules"
 
       # ============================================================
       # 8. Security Scan - Frontend Image
@@ -89,6 +90,7 @@ jobs:
           ignore-unfixed: true
           severity: CRITICAL,HIGH
           scanners: vuln
+          skip-dirs: "**/node_modules"
 
       # ============================================================
       # 9. Start Application
