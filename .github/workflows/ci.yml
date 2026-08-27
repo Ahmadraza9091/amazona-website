@@ -1,4 +1,4 @@
-```yaml
+
 name: CI/CD Pipeline
 
 on:
@@ -340,4 +340,4 @@ jobs:
             # Logout from Docker Hub
             # ======================================================
             docker logout
-```
+
