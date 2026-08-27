@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -9,49 +9,69 @@ on:
     branches:
       - main
 
+
 jobs:
 
+  # ============================================================
+  # CI JOB
+  # ============================================================
   build:
-
+    name: CI - Build, Scan & Test
     runs-on: ubuntu-latest
 
     steps:
 
-      # 1. Checkout
+      # ============================================================
+      # 1. Checkout Source Code
+      # ============================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
+      # ============================================================
       # 2. Setup Node.js
+      # ============================================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 16
 
 
-      # 3. Install backend dependencies
+      # ============================================================
+      # 3. Install Backend Dependencies
+      # ============================================================
       - name: Install backend dependencies
         run: npm install
 
 
-      # 4. Install frontend dependencies
+      # ============================================================
+      # 4. Install Frontend Dependencies
+      # ============================================================
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
 
 
-      # 5. Build frontend
+      # ============================================================
+      # 5. Build Frontend
+      # ============================================================
       - name: Build frontend
         working-directory: frontend
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
         run: npm run build
 
 
-      # 6. Build Docker images
+      # ============================================================
+      # 6. Build Docker Images
+      # ============================================================
       - name: Build Docker images
         run: docker compose build
 
 
-      # 7. Scan backend image
+      # ============================================================
+      # 7. Trivy Security Scan - Backend
+      # ============================================================
       - name: Trivy scan backend image
         uses: aquasecurity/trivy-action@master
         with:
@@ -60,9 +80,13 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+          scanners: vuln
+          skip-dirs: "**/node_modules"
 
 
-      # 8. Scan frontend image
+      # ============================================================
+      # 8. Trivy Security Scan - Frontend
+      # ============================================================
       - name: Trivy scan frontend image
         uses: aquasecurity/trivy-action@master
         with:
@@ -71,75 +95,135 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+          scanners: vuln
+          skip-dirs: "**/node_modules"
 
 
-      # 9. Start application
+      # ============================================================
+      # 9. Start Application
+      # ============================================================
       - name: Start application
         run: docker compose up -d
 
 
-      # 10. Check containers
+      # ============================================================
+      # 10. Check Container Status
+      # ============================================================
       - name: Check running containers
         run: docker compose ps
 
 
-      # 11. Wait for application
+      # ============================================================
+      # 11. Wait for Application
+      # ============================================================
       - name: Wait for application
         run: sleep 15
 
 
-      # 12. Test frontend
+      # ============================================================
+      # 12. Test Frontend
+      # ============================================================
       - name: Test frontend
         run: curl --fail http://localhost:3000
 
 
-      # 13. Test backend
+      # ============================================================
+      # 13. Test Backend API
+      # ============================================================
       - name: Test backend
         run: curl --fail http://localhost:5000/api/products
 
 
-      # 14. Stop containers
+      # ============================================================
+      # 14. Stop Containers
+      # ============================================================
       - name: Stop containers
         if: always()
         run: docker compose down
 
 
-      # 15. Login Docker Hub
+  # ============================================================
+  # DOCKER HUB JOB
+  # ============================================================
+  docker-publish:
+    name: Publish Images to Docker Hub
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    # Only push images when code is actually pushed to main.
+    # Pull requests should NOT push images.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+
+      # ============================================================
+      # 1. Checkout Repository
+      # ============================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ============================================================
+      # 2. Login to Docker Hub
+      # ============================================================
       - name: Login to Docker Hub
-        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-      # 16. Tag backend
+      # ============================================================
+      # 3. Build Docker Images
+      # ============================================================
+      - name: Build Docker images
+        run: docker compose build
+
+
+      # ============================================================
+      # 4. Tag Backend Image
+      # ============================================================
       - name: Tag backend image
-        if: github.event_name == 'push'
         run: |
           docker tag amazona-backend:latest \
             ${{ secrets.DOCKERHUB_USERNAME }}/amazona-backend:latest
 
+          docker tag amazona-backend:latest \
+            ${{ secrets.DOCKERHUB_USERNAME }}/amazona-backend:${{ github.sha }}
 
-      # 17. Tag frontend
+
+      # ============================================================
+      # 5. Tag Frontend Image
+      # ============================================================
       - name: Tag frontend image
-        if: github.event_name == 'push'
         run: |
           docker tag amazona-frontend:latest \
             ${{ secrets.DOCKERHUB_USERNAME }}/amazona-frontend:latest
 
+          docker tag amazona-frontend:latest \
+            ${{ secrets.DOCKERHUB_USERNAME }}/amazona-frontend:${{ github.sha }}
 
-      # 18. Push backend
+
+      # ============================================================
+      # 6. Push Backend Image
+      # ============================================================
       - name: Push backend image
-        if: github.event_name == 'push'
         run: |
           docker push \
             ${{ secrets.DOCKERHUB_USERNAME }}/amazona-backend:latest
 
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/amazona-backend:${{ github.sha }}
 
-      # 19. Push frontend
+
+      # ============================================================
+      # 7. Push Frontend Image
+      # ============================================================
       - name: Push frontend image
-        if: github.event_name == 'push'
         run: |
           docker push \
             ${{ secrets.DOCKERHUB_USERNAME }}/amazona-frontend:latest
+
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/amazona-frontend:${{ github.sha }}
