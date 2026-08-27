@@ -1,3 +1,4 @@
+```yaml
 name: CI/CD Pipeline
 
 on:
@@ -149,8 +150,7 @@ jobs:
 
     needs: build
 
-    # Only push images when code is actually pushed to main.
-    # Pull requests should NOT push images.
+    # Only publish on push to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -225,3 +225,119 @@ jobs:
 
           docker push \
             ${{ secrets.DOCKERHUB_USERNAME }}/amazona-frontend:${{ github.sha }}
+
+
+  # ============================================================
+  # CD JOB - DEPLOY TO EC2
+  # ============================================================
+  deploy:
+    name: CD - Deploy to EC2
+    runs-on: ubuntu-latest
+
+    # Deploy only after Docker Hub successfully receives images
+    needs: docker-publish
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+
+      # ============================================================
+      # 1. Checkout Repository
+      # ============================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ============================================================
+      # 2. Copy Docker Compose to EC2
+      # ============================================================
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "~/amazona"
+
+
+      # ============================================================
+      # 3. Deploy Application to EC2
+      # ============================================================
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+
+          script: |
+
+            # ======================================================
+            # Go to application directory
+            # ======================================================
+            cd ~/amazona
+
+
+            # ======================================================
+            # Login to Docker Hub
+            # ======================================================
+            echo "$DOCKERHUB_TOKEN" | docker login \
+              -u "$DOCKERHUB_USERNAME" \
+              --password-stdin
+
+
+            # ======================================================
+            # Pull latest images from Docker Hub
+            # ======================================================
+            docker pull "$DOCKERHUB_USERNAME/amazona-backend:latest"
+            docker pull "$DOCKERHUB_USERNAME/amazona-frontend:latest"
+
+
+            # ======================================================
+            # Tag Docker Hub images with local compose names
+            # ======================================================
+            docker tag \
+              "$DOCKERHUB_USERNAME/amazona-backend:latest" \
+              amazona-backend:latest
+
+            docker tag \
+              "$DOCKERHUB_USERNAME/amazona-frontend:latest" \
+              amazona-frontend:latest
+
+
+            # ======================================================
+            # Stop old application
+            # ======================================================
+            docker compose down
+
+
+            # ======================================================
+            # Start new application
+            # --no-build prevents EC2 from building images
+            # ======================================================
+            docker compose up -d --no-build
+
+
+            # ======================================================
+            # Show running containers
+            # ======================================================
+            docker compose ps
+
+
+            # ======================================================
+            # Remove unused Docker images
+            # ======================================================
+            docker image prune -f
+
+
+            # ======================================================
+            # Logout from Docker Hub
+            # ======================================================
+            docker logout
+```
