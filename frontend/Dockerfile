@@ -1,6 +1,8 @@
-FROM node:22-bookworm-slim AS build
+FROM node:18 AS build
 
 WORKDIR /app
+
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 COPY package*.json ./
 
