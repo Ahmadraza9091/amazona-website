@@ -9,46 +9,64 @@ on:
     branches:
       - main
 
-jobs:
-  build:
 
+jobs:
+
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
 
-      # 1. Checkout
+      # ============================================================
+      # 1. Checkout Source Code
+      # ============================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
+      # ============================================================
       # 2. Setup Node.js
+      # ============================================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 16
 
 
-      # 3. Backend dependencies
+      # ============================================================
+      # 3. Install Backend Dependencies
+      # ============================================================
       - name: Install backend dependencies
         run: npm install
 
 
-      # 4. Frontend dependencies
+      # ============================================================
+      # 4. Install Frontend Dependencies
+      # ============================================================
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
 
 
-      # 5. Frontend build
+      # ============================================================
+      # 5. Build Frontend
+      # ============================================================
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
 
-      # 6. Build Docker images
+      # ============================================================
+      # 6. Build Docker Images
+      # ============================================================
       - name: Build Docker images
         run: docker compose build
 
+
+      # ============================================================
+      # 7. Security Scan - Backend Image
+      # ============================================================
       - name: Trivy scan backend image
         uses: aquasecurity/trivy-action@master
         with:
@@ -58,6 +76,10 @@ jobs:
           ignore-unfixed: true
           severity: CRITICAL,HIGH
 
+
+      # ============================================================
+      # 8. Security Scan - Frontend Image
+      # ============================================================
       - name: Trivy scan frontend image
         uses: aquasecurity/trivy-action@master
         with:
@@ -68,32 +90,44 @@ jobs:
           severity: CRITICAL,HIGH
 
 
-      # 9. Start application
+      # ============================================================
+      # 9. Start Application
+      # ============================================================
       - name: Start application
         run: docker compose up -d
 
 
-      # 10. Check containers
+      # ============================================================
+      # 10. Check Container Status
+      # ============================================================
       - name: Check running containers
         run: docker compose ps
 
 
-      # 11. Wait for application
+      # ============================================================
+      # 11. Wait for Application
+      # ============================================================
       - name: Wait for application
         run: sleep 15
 
 
-      # 12. Test frontend
+      # ============================================================
+      # 12. Test Frontend
+      # ============================================================
       - name: Test frontend
         run: curl --fail http://localhost:3000
 
 
-      # 13. Test backend
+      # ============================================================
+      # 13. Test Backend API
+      # ============================================================
       - name: Test backend
         run: curl --fail http://localhost:5000/api/products
 
 
-      # 14. Stop containers
+      # ============================================================
+      # 14. Stop Containers
+      # ============================================================
       - name: Stop containers
         if: always()
         run: docker compose down
