@@ -1,6 +1,3 @@
-# ============================================================
-# Build Stage
-# ============================================================
 FROM node:18 AS build
 
 WORKDIR /app
@@ -11,16 +8,11 @@ RUN npm install
 
 COPY . .
 
-# Old React/Webpack compatibility
-RUN NODE_OPTIONS=--openssl-legacy-provider npm run build
+RUN npm run build
 
 
-# ============================================================
-# Production Stage
-# ============================================================
 FROM nginx:alpine
 
-# Update Alpine security packages
 RUN apk update && \
     apk upgrade && \
     rm -rf /var/cache/apk/*
