@@ -1,137 +1,174 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { createOrder, detailsOrder, payOrder } from '../actions/orderActions';
+import { detailsOrder, payOrder } from '../actions/orderActions';
 import PaypalButton from '../components/PaypalButton';
-function OrderScreen(props) {
 
-  const orderPay = useSelector(state => state.orderPay);
-  const { loading: loadingPay, success: successPay, error: errorPay } = orderPay;
+function OrderScreen(props) {
+  const orderPay = useSelector((state) => state.orderPay);
+  const { loading: loadingPay, success: successPay } = orderPay;
   const dispatch = useDispatch();
+
+  const orderId = props.match.params.id;
+
   useEffect(() => {
     if (successPay) {
-      props.history.push("/profile");
+      props.history.push('/profile');
     } else {
-      dispatch(detailsOrder(props.match.params.id));
+      dispatch(detailsOrder(orderId));
     }
-    return () => {
-    };
-  }, [successPay]);
+  }, [dispatch, orderId, successPay, props.history]);
 
   const handleSuccessPayment = (paymentResult) => {
     dispatch(payOrder(order, paymentResult));
-  }
+  };
 
-  const orderDetails = useSelector(state => state.orderDetails);
+  const orderDetails = useSelector((state) => state.orderDetails);
   const { loading, order, error } = orderDetails;
 
-  return loading ? <div>Loading ...</div> : error ? <div>{error}</div> :
-
+  return loading ? (
+    <div className="loading-spinner">
+      <i className="fa fa-circle-o-notch fa-spin" style={{ marginRight: '1rem' }}></i>
+      Loading Order Details...
+    </div>
+  ) : error ? (
+    <div className="alert alert-error">
+      <i className="fa fa-exclamation-circle"></i>
+      <span>{error}</span>
+    </div>
+  ) : order ? (
     <div>
+      <div className="category-banner" style={{ marginBottom: '2.4rem' }}>
+        <h2>
+          <i className="fa fa-file-text-o" style={{ color: 'var(--primary)' }}></i>
+          Order #{order._id}
+        </h2>
+        <Link to="/profile" className="back-link">
+          <i className="fa fa-arrow-left"></i> My Orders
+        </Link>
+      </div>
+
       <div className="placeorder">
         <div className="placeorder-info">
-          <div>
+          {/* Shipping Status */}
+          <div className="placeorder-card">
             <h3>
-              Shipping
-          </h3>
-            <div>
-              {order.shipping.address}, {order.shipping.city},
-          {order.shipping.postalCode}, {order.shipping.country},
-          </div>
-            <div>
-              {order.isDelivered ? "Delivered at " + order.deliveredAt : "Not Delivered."}
+              <i className="fa fa-truck" style={{ color: 'var(--primary)' }}></i>
+              Delivery Information
+            </h3>
+            <p style={{ marginTop: '0.8rem' }}>
+              <strong>Address:</strong> {order.shipping.address}, {order.shipping.city},{' '}
+              {order.shipping.postalCode}, {order.shipping.country}
+            </p>
+            <div style={{ marginTop: '1.2rem' }}>
+              <span
+                className={`badge ${
+                  order.isDelivered ? 'badge-success' : 'badge-warning'
+                }`}
+              >
+                <i className={`fa ${order.isDelivered ? 'fa-check' : 'fa-clock-o'}`}></i>
+                {order.isDelivered
+                  ? `Delivered on ${order.deliveredAt ? order.deliveredAt.substring(0, 10) : ''}`
+                  : 'Delivery in Progress (Pending)'}
+              </span>
             </div>
           </div>
-          <div>
-            <h3>Payment</h3>
-            <div>
-              Payment Method: {order.payment.paymentMethod}
-            </div>
-            <div>
-              {order.isPaid ? "Paid at " + order.paidAt : "Not Paid."}
-            </div>
-          </div>
-          <div>
-            <ul className="cart-list-container">
-              <li>
-                <h3>
-                  Shopping Cart
-          </h3>
-                <div>
-                  Price
-          </div>
-              </li>
-              {
-                order.orderItems.length === 0 ?
-                  <div>
-                    Cart is empty
-          </div>
-                  :
-                  order.orderItems.map(item =>
-                    <li key={item._id}>
-                      <div className="cart-image">
-                        <img src={item.image} alt="product" />
-                      </div>
-                      <div className="cart-name">
-                        <div>
-                          <Link to={"/product/" + item.product}>
-                            {item.name}
-                          </Link>
 
-                        </div>
-                        <div>
-                          Qty: {item.qty}
-                        </div>
+          {/* Payment Status */}
+          <div className="placeorder-card">
+            <h3>
+              <i className="fa fa-credit-card" style={{ color: 'var(--primary)' }}></i>
+              Payment Status
+            </h3>
+            <p style={{ marginTop: '0.8rem', textTransform: 'capitalize' }}>
+              <strong>Method:</strong> {order.payment.paymentMethod}
+            </p>
+            <div style={{ marginTop: '1.2rem' }}>
+              <span
+                className={`badge ${
+                  order.isPaid ? 'badge-success' : 'badge-danger'
+                }`}
+              >
+                <i className={`fa ${order.isPaid ? 'fa-check' : 'fa-exclamation-triangle'}`}></i>
+                {order.isPaid
+                  ? `Paid on ${order.paidAt ? order.paidAt.substring(0, 10) : ''}`
+                  : 'Payment Outstanding'}
+              </span>
+            </div>
+          </div>
+
+          {/* Ordered Items */}
+          <div className="placeorder-card">
+            <h3>
+              <i className="fa fa-shopping-bag" style={{ color: 'var(--primary)' }}></i>
+              Ordered Items
+            </h3>
+            <ul className="cart-list-container" style={{ marginTop: '1.6rem' }}>
+              {order.orderItems.length === 0 ? (
+                <div>No items in this order.</div>
+              ) : (
+                order.orderItems.map((item) => (
+                  <li key={item._id} className="cart-item">
+                    <div className="cart-image">
+                      <img src={item.image} alt={item.name} />
+                    </div>
+                    <div className="cart-name">
+                      <Link to={'/product/' + item.product}>{item.name}</Link>
+                      <div style={{ fontSize: '1.35rem', color: 'var(--text-muted)' }}>
+                        Quantity: <strong>{item.qty}</strong> &times; ${item.price}
                       </div>
-                      <div className="cart-price">
-                        ${item.price}
-                      </div>
-                    </li>
-                  )
-              }
+                    </div>
+                    <div className="cart-price">${item.qty * item.price}</div>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
-
-
         </div>
+
+        {/* Order Summary & Payment Button */}
         <div className="placeorder-action">
+          <h3 style={{ fontSize: '2rem', marginBottom: '1.6rem' }}>Order Summary</h3>
           <ul>
-            <li className="placeorder-actions-payment">
-              {loadingPay && <div>Finishing Payment...</div>}
-              {!order.isPaid &&
-                <PaypalButton
-                  amount={order.totalPrice}
-                  onSuccess={handleSuccessPayment} />
-              }
+            <li>
+              <span>Items Total:</span>
+              <span style={{ fontWeight: 600 }}>${order.itemsPrice}</span>
             </li>
             <li>
-              <h3>Order Summary</h3>
+              <span>Shipping:</span>
+              <span style={{ fontWeight: 600 }}>
+                {order.shippingPrice === 0 ? 'FREE' : `$${order.shippingPrice}`}
+              </span>
             </li>
             <li>
-              <div>Items</div>
-              <div>${order.itemsPrice}</div>
+              <span>Tax:</span>
+              <span style={{ fontWeight: 600 }}>${order.taxPrice}</span>
             </li>
-            <li>
-              <div>Shipping</div>
-              <div>${order.shippingPrice}</div>
-            </li>
-            <li>
-              <div>Tax</div>
-              <div>${order.taxPrice}</div>
-            </li>
-            <li>
-              <div>Order Total</div>
-              <div>${order.totalPrice}</div>
+            <li className="order-total-row">
+              <span>Total Paid / Due:</span>
+              <span>${order.totalPrice}</span>
             </li>
           </ul>
 
-
-
+          {!order.isPaid && (
+            <div style={{ marginTop: '2.4rem' }}>
+              {loadingPay && (
+                <div className="loading-spinner" style={{ marginBottom: '1rem' }}>
+                  Processing payment...
+                </div>
+              )}
+              <div style={{ background: '#fff', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                <PaypalButton
+                  amount={order.totalPrice}
+                  onSuccess={handleSuccessPayment}
+                />
+              </div>
+            </div>
+          )}
         </div>
-
       </div>
     </div>
-
+  ) : null;
 }
 
 export default OrderScreen;

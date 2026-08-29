@@ -3,9 +3,40 @@ import express from 'express';
 import mongoose from 'mongoose';
 
 import Product from '../models/productModel';
+import data from '../data';
 import { isAuth, isAdmin } from '../util';
 
 const router = express.Router();
+
+/*
+============================================================
+SEED DEMO PRODUCTS
+POST /api/products/seed
+============================================================
+*/
+router.post('/seed', isAuth, isAdmin, async (req, res) => {
+  try {
+    await Product.deleteMany({});
+    const products = data.products.map((product) => ({
+      name: product.name,
+      image: product.image,
+      brand: product.brand,
+      price: product.price,
+      category: product.category,
+      countInStock: product.countInStock || 10,
+      description: product.description || 'No description available',
+      rating: product.rating || 4.5,
+      numReviews: product.numReviews || 10,
+    }));
+    const createdProducts = await Product.insertMany(products);
+    return res.status(201).send({
+      message: `${createdProducts.length} Demo Products Seeded Successfully`,
+      data: createdProducts,
+    });
+  } catch (error) {
+    return res.status(500).send({ message: 'Error in seeding products', error: error.message });
+  }
+});
 
 /*
 ============================================================

@@ -9,17 +9,18 @@ function PlaceOrderScreen(props) {
   const orderCreate = useSelector((state) => state.orderCreate);
 
   const { success, order } = orderCreate;
-
   const { cartItems, shipping, payment } = cart;
 
-  if (!shipping.address) {
-    props.history.push('/shipping');
-  } else if (!payment.paymentMethod) {
-    props.history.push('/payment');
-  }
+  useEffect(() => {
+    if (!shipping || !shipping.address) {
+      props.history.push('/shipping');
+    } else if (!payment || !payment.paymentMethod) {
+      props.history.push('/payment');
+    }
+  }, [shipping, payment, props.history]);
 
   const itemsPrice = cartItems.reduce(
-    (a, c) => a + c.price * c.qty,
+    (a, c) => a + c.price * Number(c.qty),
     0
   );
 
@@ -54,51 +55,62 @@ function PlaceOrderScreen(props) {
       <CheckoutSteps step1 step2 step3 step4 />
 
       <div className="placeorder">
+        {/* Left Column: Order Details */}
         <div className="placeorder-info">
-          <div>
-            <h3>Shipping</h3>
-            <div>
-              {cart.shipping.address}, {cart.shipping.city},
-              {cart.shipping.postalCode}, {cart.shipping.country}
+          {/* Shipping Summary */}
+          <div className="placeorder-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>
+                <i className="fa fa-map-marker" style={{ color: 'var(--primary)' }}></i>
+                Shipping Address
+              </h3>
+              <Link to="/shipping" style={{ fontSize: '1.35rem', fontWeight: 600 }}>
+                <i className="fa fa-pencil"></i> Edit
+              </Link>
             </div>
+            <p style={{ marginTop: '0.8rem' }}>
+              {shipping.address}, {shipping.city}, {shipping.postalCode}, {shipping.country}
+            </p>
           </div>
 
-          <div>
-            <h3>Payment</h3>
-            <div>
-              Payment Method: {cart.payment.paymentMethod}
+          {/* Payment Method Summary */}
+          <div className="placeorder-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>
+                <i className="fa fa-credit-card" style={{ color: 'var(--primary)' }}></i>
+                Payment Method
+              </h3>
+              <Link to="/payment" style={{ fontSize: '1.35rem', fontWeight: 600 }}>
+                <i className="fa fa-pencil"></i> Edit
+              </Link>
             </div>
+            <p style={{ marginTop: '0.8rem', textTransform: 'capitalize' }}>
+              Method: <strong>{payment.paymentMethod}</strong>
+            </p>
           </div>
 
-          <div>
-            <ul className="cart-list-container">
-              <li>
-                <h3>Shopping Cart</h3>
-                <div>Price</div>
-              </li>
-
+          {/* Ordered Items List */}
+          <div className="placeorder-card">
+            <h3>
+              <i className="fa fa-shopping-bag" style={{ color: 'var(--primary)' }}></i>
+              Review Ordered Items
+            </h3>
+            <ul className="cart-list-container" style={{ marginTop: '1.6rem' }}>
               {cartItems.length === 0 ? (
-                <div>Cart is empty</div>
+                <div>Your cart is empty.</div>
               ) : (
                 cartItems.map((item) => (
-                  <li key={item.product}>
+                  <li key={item.product} className="cart-item">
                     <div className="cart-image">
-                      <img src={item.image} alt="product" />
+                      <img src={item.image} alt={item.name} />
                     </div>
-
                     <div className="cart-name">
-                      <div>
-                        <Link to={'/product/' + item.product}>
-                          {item.name}
-                        </Link>
+                      <Link to={'/product/' + item.product}>{item.name}</Link>
+                      <div style={{ fontSize: '1.35rem', color: 'var(--text-muted)' }}>
+                        Quantity: <strong>{item.qty}</strong> &times; ${item.price}
                       </div>
-
-                      <div>Qty: {item.qty}</div>
                     </div>
-
-                    <div className="cart-price">
-                      ${item.price}
-                    </div>
+                    <div className="cart-price">${item.qty * item.price}</div>
                   </li>
                 ))
               )}
@@ -106,41 +118,54 @@ function PlaceOrderScreen(props) {
           </div>
         </div>
 
+        {/* Right Column: Order Summary & Action */}
         <div className="placeorder-action">
+          <h3 style={{ fontSize: '2rem', marginBottom: '1.6rem' }}>Order Summary</h3>
           <ul>
             <li>
-              <button
-                className="button primary full-width"
-                onClick={placeOrderHandler}
-              >
-                Place Order
-              </button>
+              <span>Items Total:</span>
+              <span style={{ fontWeight: 600 }}>${itemsPrice.toFixed(2)}</span>
             </li>
-
             <li>
-              <h3>Order Summary</h3>
+              <span>Shipping Fee:</span>
+              <span style={{ fontWeight: 600, color: shippingPrice === 0 ? 'var(--success)' : 'inherit' }}>
+                {shippingPrice === 0 ? 'FREE' : `$${shippingPrice.toFixed(2)}`}
+              </span>
             </li>
-
             <li>
-              <div>Items</div>
-              <div>${itemsPrice}</div>
+              <span>Estimated Tax (15%):</span>
+              <span style={{ fontWeight: 600 }}>${taxPrice.toFixed(2)}</span>
             </li>
-
-            <li>
-              <div>Shipping</div>
-              <div>${shippingPrice}</div>
-            </li>
-
-            <li>
-              <div>Tax</div>
-              <div>${taxPrice}</div>
-            </li>
-
-            <li>
-              <div>Order Total</div>
-              <div>${totalPrice}</div>
+            <li className="order-total-row">
+              <span>Grand Total:</span>
+              <span>${totalPrice.toFixed(2)}</span>
             </li>
           </ul>
+
+          <button
+            className="button primary full-width"
+            onClick={placeOrderHandler}
+            disabled={cartItems.length === 0}
+            style={{ padding: '1.4rem', marginTop: '2rem' }}
+          >
+            <i className="fa fa-check-circle"></i> Place Your Order
+          </button>
+
+          <div
+            style={{
+              marginTop: '1.6rem',
+              fontSize: '1.25rem',
+              color: 'var(--text-muted)',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.6rem',
+            }}
+          >
+            <i className="fa fa-shield" style={{ color: 'var(--success)' }}></i>
+            <span>Encrypted & Safe Checkout</span>
+          </div>
         </div>
       </div>
     </div>
