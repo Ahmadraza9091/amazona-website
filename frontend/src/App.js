@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 import './App.css';
 import HomeScreen from './screens/HomeScreen';
 import ProductScreen from './screens/ProductScreen';
@@ -55,6 +55,8 @@ function App() {
 
   const handleLogout = () => {
     dispatch(logout());
+    // Redirect to homepage so protected pages are no longer visible
+    window.location.href = '/';
   };
 
   return (
@@ -264,10 +266,40 @@ function App() {
         {/* Main Content */}
         <main className="main">
           <div className="content">
-            <Route path="/admin/dashboard" component={AdminDashboardScreen} />
-            <Route path="/dashboard" component={AdminDashboardScreen} />
-            <Route path="/orders" component={OrdersScreen} />
-            <Route path="/profile" component={ProfileScreen} />
+            {/* Admin-only protected routes — redirect to home if not logged in as admin */}
+            <Route
+              path="/admin/dashboard"
+              render={() =>
+                userInfo && userInfo.isAdmin ? (
+                  <AdminDashboardScreen />
+                ) : (
+                  <Redirect to="/" />
+                )
+              }
+            />
+            <Route
+              path="/dashboard"
+              render={() =>
+                userInfo && userInfo.isAdmin ? (
+                  <AdminDashboardScreen />
+                ) : (
+                  <Redirect to="/" />
+                )
+              }
+            />
+            {/* Auth-required routes */}
+            <Route
+              path="/orders"
+              render={() =>
+                userInfo ? <OrdersScreen /> : <Redirect to="/signin" />
+              }
+            />
+            <Route
+              path="/profile"
+              render={() =>
+                userInfo ? <ProfileScreen /> : <Redirect to="/signin" />
+              }
+            />
             <Route path="/order/:id" component={OrderScreen} />
             <Route path="/products" component={ProductsScreen} />
             <Route path="/shipping" component={ShippingScreen} />
