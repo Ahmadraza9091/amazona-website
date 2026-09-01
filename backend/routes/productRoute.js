@@ -208,11 +208,9 @@ router.delete('/:id', isAuth, isAdmin, async (req, res) => {
     });
   }
 
-  const deletedProduct = await Product.findById(id);
+  const deletedProduct = await Product.findByIdAndDelete(id);
 
   if (deletedProduct) {
-    await deletedProduct.remove();
-
     return res.send({
       message: 'Product Deleted',
     });

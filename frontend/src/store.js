@@ -1,5 +1,5 @@
 import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
-import thunk from 'redux-thunk';
+import { thunk } from 'redux-thunk';
 import Cookie from 'js-cookie';
 import {
   productListReducer,
@@ -23,8 +23,17 @@ import {
   orderDeleteReducer,
 } from './reducers/orderReducers';
 
-const cartItems = Cookie.getJSON('cartItems') || [];
-const userInfo = Cookie.getJSON('userInfo') || null;
+// js-cookie v3 removed getJSON — use get() + JSON.parse() with a try/catch
+const parseJSON = (value) => {
+  try {
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+};
+
+const cartItems = parseJSON(Cookie.get('cartItems')) || [];
+const userInfo = parseJSON(Cookie.get('userInfo')) || null;
 
 const initialState = {
   cart: { cartItems, shipping: {}, payment: {} },

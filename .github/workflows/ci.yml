@@ -30,19 +30,20 @@ jobs:
 
 
       # ============================================================
-      # 2. Setup Node.js
+      # 2. Setup Node.js 20 LTS
       # ============================================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
+          cache: 'npm'
 
 
       # ============================================================
       # 3. Install Backend Dependencies
       # ============================================================
       - name: Install backend dependencies
-        run: npm install
+        run: npm ci
 
 
       # ============================================================
@@ -50,7 +51,7 @@ jobs:
       # ============================================================
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm install
+        run: npm ci
 
 
       # ============================================================
@@ -58,6 +59,9 @@ jobs:
       # ============================================================
       - name: Build frontend
         working-directory: frontend
+        env:
+          CI: false
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
 
@@ -72,7 +76,7 @@ jobs:
       # 7. Trivy Security Scan - Backend
       # ============================================================
       - name: Trivy scan backend image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: amazona-backend:latest
           format: table
@@ -87,7 +91,7 @@ jobs:
       # 8. Trivy Security Scan - Frontend
       # ============================================================
       - name: Trivy scan frontend image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: amazona-frontend:latest
           format: table
@@ -113,10 +117,19 @@ jobs:
 
 
       # ============================================================
-      # 11. Wait for Application
+      # 11. Wait for Application (with retry loop)
       # ============================================================
-      - name: Wait for application
-        run: sleep 15
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend to be healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5000/api/products > /dev/null 2>&1; then
+              echo "Backend is up!"
+              break
+            fi
+            echo "Attempt $i/30 — waiting 3s..."
+            sleep 3
+          done
 
 
       # ============================================================
@@ -163,7 +176,24 @@ jobs:
 
 
       # ============================================================
-      # 2. Login to Docker Hub
+      # 2. Setup Node.js (for caching)
+      # ============================================================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+
+      # ============================================================
+      # 3. Set up Docker Buildx
+      # ============================================================
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+
+      # ============================================================
+      # 4. Login to Docker Hub
       # ============================================================
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -173,14 +203,14 @@ jobs:
 
 
       # ============================================================
-      # 3. Build Docker Images
+      # 5. Build Docker Images
       # ============================================================
       - name: Build Docker images
         run: docker compose build
 
 
       # ============================================================
-      # 4. Tag Backend Image
+      # 6. Tag Backend Image
       # ============================================================
       - name: Tag backend image
         run: |
@@ -192,7 +222,7 @@ jobs:
 
 
       # ============================================================
-      # 5. Tag Frontend Image
+      # 7. Tag Frontend Image
       # ============================================================
       - name: Tag frontend image
         run: |
@@ -204,7 +234,7 @@ jobs:
 
 
       # ============================================================
-      # 6. Push Backend Image
+      # 8. Push Backend Image
       # ============================================================
       - name: Push backend image
         run: |
@@ -216,7 +246,7 @@ jobs:
 
 
       # ============================================================
-      # 7. Push Frontend Image
+      # 9. Push Frontend Image
       # ============================================================
       - name: Push frontend image
         run: |
@@ -252,12 +282,12 @@ jobs:
       # 2. Copy Docker Compose to EC2
       # ============================================================
       - name: Copy docker-compose.yml to EC2
-        uses: appleboy/scp-action@v1
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yml"
+          source: "docker-compose.prod.yml"
           target: "~/amazona"
 
 
@@ -265,7 +295,7 @@ jobs:
       # 3. Deploy Application to EC2
       # ============================================================
       - name: Deploy application
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.0.3
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -314,20 +344,20 @@ jobs:
             # ======================================================
             # Stop old application
             # ======================================================
-            docker compose down
+            docker compose -f docker-compose.prod.yml down
 
 
             # ======================================================
             # Start new application
             # --no-build prevents EC2 from building images
             # ======================================================
-            docker compose up -d --no-build
+            docker compose -f docker-compose.prod.yml up -d --no-build
 
 
             # ======================================================
             # Show running containers
             # ======================================================
-            docker compose ps
+            docker compose -f docker-compose.prod.yml ps
 
 
             # ======================================================
@@ -340,4 +370,3 @@ jobs:
             # Logout from Docker Hub
             # ======================================================
             docker logout
-
