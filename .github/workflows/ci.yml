@@ -76,7 +76,7 @@ jobs:
       # 7. Trivy Security Scan - Backend
       # ============================================================
       - name: Trivy scan backend image
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: amazona-backend:latest
           format: table
@@ -91,7 +91,7 @@ jobs:
       # 8. Trivy Security Scan - Frontend
       # ============================================================
       - name: Trivy scan frontend image
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: amazona-frontend:latest
           format: table
