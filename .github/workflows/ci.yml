@@ -78,6 +78,7 @@ jobs:
       - name: Trivy scan backend image
         uses: aquasecurity/trivy-action@0.35.0
         with:
+          scan-type: 'image'
           image-ref: amazona-backend:latest
           format: table
           exit-code: 1
@@ -93,6 +94,7 @@ jobs:
       - name: Trivy scan frontend image
         uses: aquasecurity/trivy-action@0.35.0
         with:
+          scan-type: 'image'
           image-ref: amazona-frontend:latest
           format: table
           exit-code: 1
