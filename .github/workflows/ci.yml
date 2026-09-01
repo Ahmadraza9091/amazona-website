@@ -36,8 +36,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       # ============================================================
       # 3. Install Backend Dependencies
@@ -177,14 +179,7 @@ jobs:
         uses: actions/checkout@v4
 
 
-      # ============================================================
-      # 2. Setup Node.js (for caching)
-      # ============================================================
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+     
 
 
       # ============================================================
