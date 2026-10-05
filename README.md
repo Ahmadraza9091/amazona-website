@@ -1,266 +1,316 @@
-# React & Node Tutorial - Full ECommerce in 5 Hours [2020]
+<div align="center">
 
-Welcome to my React and Node tutorial to build a fully-functional e-commerce website in 5 hours. Open your code editor and follow me for the next hours to build an e-commerce website using React and Node.JS.
+# Amazona
 
-## Demo Website
+### A full-stack online shop, from product browsing to order management
 
-👉 Demo : https://oldamazona.webacademy.pro
+Explore a React storefront backed by a Node.js API and MongoDB. Run the complete application locally with one Docker Compose command, or use the included GitHub Actions workflow to build, scan, publish, and deploy it.
 
-## Video Tutorial
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=nodedotjs&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-ISC-blue)
 
-👉 Click on this image to watch full 5-hours video of this tutorial
+</div>
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Fy9SdZLBTOo/0.jpg)](https://www.youtube.com/watch?v=Fy9SdZLBTOo)
+---
 
-## You Will Learn
+## Contents
 
-- HTML5 and CSS3: Semantic Elements, CSS Grid, Flexbox
-- React: Components, Props, Events, Hooks, Router, Axios
-- Redux: Store, Reducers, Actions
-- Node & Express: Web API, Body Parser, File Upload, JWT
-- MongoDB: Mongoose, Aggregation
-- Development: ESLint, Babel, Git, Github,
-- Deployment: Heroku
-- Watch React & Node Tutorial
+- [See the shop](#see-the-shop)
+- [What you can do](#what-you-can-do)
+- [How it fits together](#how-it-fits-together)
+- [Start locally with Docker](#start-locally-with-docker-recommended)
+- [Try the admin features](#try-the-admin-features)
+- [Run in development mode](#run-in-development-mode-without-docker)
+- [CI/CD and deployment](#cicd-and-deployment)
+- [Configuration and security](#configuration-and-security)
+- [Troubleshooting](#troubleshooting)
+- [Project layout](#project-layout)
+- [Technology overview](#technology-overview)
 
-## Run Locally
+## See the shop
 
-### 1. Clone repo
+The product photos below are included with the project. Start the app using the instructions below to browse the complete storefront.
 
+<div align="center">
+  <img src="frontend/public/images/p1.jpg" alt="Amazona sample product" width="30%">
+  <img src="frontend/public/images/p2.jpg" alt="Amazona sample product" width="30%">
+  <img src="frontend/public/images/p3.jpg" alt="Amazona sample product" width="30%">
+</div>
+
+## What you can do
+
+### As a shopper
+
+- Browse the product catalog and view product details.
+- Search, sort, and filter products.
+- Add products to a shopping cart.
+- Register, sign in, and manage a profile.
+- Enter shipping details, place orders, and view order history.
+- Rate and review products.
+
+### As an administrator
+
+- Manage the product catalog.
+- Review and manage customer orders.
+- Add the included sample product catalog from the product-management screen.
+
+> **Note:** The sample catalog action replaces the existing product catalog. Use it only when that is what you intend.
+
+## How it fits together
+
+The storefront, API, and database run as separate services. In the packaged storefront, Nginx serves the React app and forwards `/api/` requests to the backend.
+
+```mermaid
+flowchart LR
+    Browser["Your browser<br/>localhost:3000"] -->|"Website and /api requests"| Web["Frontend<br/>React + Nginx"]
+    Web -->|"Forward /api/"| API["Backend<br/>Node.js + Express"]
+    API -->|"Read and write"| DB[("MongoDB<br/>amazona database")]
 ```
-$ git clone git@github.com:basir/node-react-ecommerce.git
-$ cd node-react-ecommerce
+
+| Service | What it does | Local address |
+| --- | --- | --- |
+| Frontend | Displays the store and forwards API calls | [http://localhost:3000](http://localhost:3000) |
+| Backend | Provides product, account, and order API routes | [http://localhost:5000](http://localhost:5000) |
+| MongoDB | Stores products, users, and orders | `localhost:27017` |
+
+## Start locally with Docker (recommended)
+
+Docker Compose starts the website, API, and database together. You do **not** need to install Node.js or MongoDB separately for this option.
+
+### 1. Install Docker
+
+Install and start [Docker Desktop](https://www.docker.com/products/docker-desktop/) on Windows or macOS. On Linux, install Docker Engine and the Docker Compose plugin. Check that Docker is running before continuing.
+
+### 2. Get the project
+
+If you have Git installed, clone the repository you want to run:
+
+```sh
+git clone <repository-url>
+cd <repository-folder>
 ```
 
-### 2. Install MongoDB
+Or download and extract the project files, then open a terminal in the folder containing `docker-compose.yml`.
 
-Download it from here: https://docs.mongodb.com/manual/administration/install-community/
+### 3. Build and start the app
 
-### 3. Run Backend
-
-```
-$ npm install
-$ npm start
+```sh
+docker compose up --build
 ```
 
-### 4. Run Frontend
+The first run may take a few minutes while Docker downloads base images and builds the application. Keep this terminal open while the services run. When startup completes, visit:
 
+- **Storefront:** [http://localhost:3000](http://localhost:3000)
+- **Product API:** [http://localhost:5000/api/products](http://localhost:5000/api/products)
+
+The product API returns JSON. It is a convenient way to check that the backend is responding.
+
+### 4. Stop the app
+
+Press **Ctrl+C** in the terminal running Compose. If you started it in the background with `-d`, stop it from the project folder with:
+
+```sh
+docker compose down
 ```
-# open new terminal
-$ cd frontend
-$ npm install
-$ npm start
+
+Stopping the services does not delete the database. MongoDB stores its data in the `mongodb_data` Docker volume, which is reused the next time the app starts.
+
+### Helpful Compose commands
+
+Run each command from the project folder:
+
+| Command | What it does |
+| --- | --- |
+| `docker compose up --build` | Build images if needed and run services in the foreground |
+| `docker compose up --build -d` | Build and run services in the background |
+| `docker compose ps` | Show service status |
+| `docker compose logs -f` | Follow logs from all services |
+| `docker compose logs -f backend` | Follow backend logs |
+| `docker compose down` | Stop and remove the containers and network, keeping database data |
+
+## Try the admin features
+
+The project includes a demo administrator account for local evaluation:
+
+1. Start the application with Docker Compose.
+2. Open [http://localhost:5000/api/users/createadmin](http://localhost:5000/api/users/createadmin) once to create the demo account.
+3. Go to [http://localhost:3000/signin](http://localhost:3000/signin) and sign in:
+
+   | Field | Demo value |
+   | --- | --- |
+   | Email | `admin@example.com` |
+   | Password | `1234` |
+
+4. Open the product or order management pages to explore the admin features.
+5. To add sample products, use the sample-catalog action on the product-management screen.
+
+> **Important:** These demo credentials and the account-creation route are public defaults in the source code. This is for local demonstration only. Do not expose them on an internet-accessible installation.
+
+## Run in development mode (without Docker)
+
+Use this option if you want to work on the frontend or backend source directly. You need **Node.js 20 or newer**, **npm 10 or newer**, and a MongoDB server running on your computer.
+
+### Start MongoDB and the backend
+
+Make sure your local MongoDB service is running, then, from the project root:
+
+```sh
+npm install
+npm start
 ```
 
-### 5. Create Admin User
+The backend uses `mongodb://localhost/amazona` by default and listens on port `5000`.
 
-- Run this on chrome: http://localhost:5000/api/users/createadmin
-- It returns admin email and password
+### Start the frontend
 
-### 6. Login
+Open a second terminal in the project root and run:
 
-- Run http://localhost:3000/signin
-- Enter admin email and password and click signin
+```sh
+cd frontend
+npm install
+npm start
+```
 
-### 7. Create Products
+When prompted, open [http://localhost:3000](http://localhost:3000). The frontend development server forwards API requests to the backend at `http://127.0.0.1:5000`.
 
-- Run http://localhost:3000/products
-- Click create product and enter product info
+### Local configuration
 
-## Support
+The backend reads these environment variables:
 
-- Q/A: https://webacademy.pro/oldamazona
-- Contact Instructor: [Basir](mailto:basir.jafarzadeh@gmail.com)
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `5000` | Port used by the backend |
+| `MONGODB_URL` | `mongodb://localhost/amazona` | MongoDB connection address |
+| `JWT_SECRET` | `somethingsecret` | Secret used to sign authentication tokens |
+| `PAYPAL_CLIENT_ID` | `sb` | PayPal client ID returned by the API |
+| `AWS_REGION` | `us-east-1` | AWS region for S3 image uploads |
+| `accessKeyId` | `accessKeyId` | AWS access key ID for S3 image uploads |
+| `secretAccessKey` | `secretAccessKey` | AWS secret access key for S3 image uploads |
 
-## Video Tutorials
+To override a value in a local terminal, set it before starting the backend. For example, in PowerShell:
 
-### [00:02:00 Part 01- Introduction](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=120s)
+```powershell
+$env:MONGODB_URL = "mongodb://localhost:27017/amazona"
+$env:JWT_SECRET = "replace-this-with-a-private-random-value"
+npm start
+```
 
-It gives you an overview of the tutorial to build an eCommerce website like Amazon.
+For Docker, set application configuration in the backend service environment in `docker-compose.yml`. Never commit real passwords, private keys, or cloud credentials to the repository.
 
-### [00:08:26 Part 02- Install Tools](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=506s)
+## CI/CD and deployment
 
-You need to install a code editor and a web browser to start web development. In this part, we will prepare the environment to start coding.
+The workflow at `.github/workflows/ci.yml` runs on pull requests targeting `main` and pushes to `main`.
 
-### [00:12:36 Part 03- Website Template](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=756s)
+```mermaid
+flowchart LR
+    Change["Pull request or push to main"] --> Build["Install and build"]
+    Build --> Scan["Build Docker images<br/>Trivy vulnerability scan"]
+    Scan --> Smoke["Start services<br/>HTTP smoke checks"]
+    Smoke --> Publish["Push to Docker Hub<br/>(main branch only)"]
+    Publish --> Deploy["Deploy on EC2<br/>(main branch only)"]
+```
 
-In this part, you create a web template for the eCommerce website.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/56kqn8m5n1m9fejdoxkz.png)
+### Pull request checks
 
-### [00:29:47 Part 04- Products List](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=1787s)
+For a pull request to `main`, GitHub Actions:
 
-We will create a list of products as static HTML elements.
+1. Installs backend and frontend dependencies.
+2. Builds the React frontend and both Docker images.
+3. Scans the backend and frontend images with Trivy. The workflow fails for reported **HIGH** or **CRITICAL** vulnerabilities that have a fix available.
+4. Starts the services and checks that the website and product API respond.
+5. Stops the test containers.
 
-### [00:41:54 Part 05- Create Sidebar](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=2514s)
+These are build, image-scan, and HTTP smoke checks; the workflow does not currently run a separate application unit-test suite.
 
-We will create a hamburger menu that shows and hide the sidebar. Also, we design the details page of the products.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/3sceblg6i6790minhaxg.jpg)
+### Publish and deploy on `main`
 
-### [00:52:39 Part 06- Create React App](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=3159s)
+After the checks pass on a push to `main`, the workflow publishes `latest` and commit-specific Docker images to Docker Hub, then deploys the `latest` images to an EC2 server using `docker-compose.prod.yml`.
 
-This part is about the frontend. We use React library to build the UI elements.
+To enable publishing and deployment, add the following under **GitHub repository → Settings → Secrets and variables → Actions → New repository secret**:
 
-### [01:01:09 Part 07- Render Products](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=3669s)
+| Secret name | Value |
+| --- | --- |
+| `DOCKERHUB_USERNAME` | Docker Hub account username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token with permission to push images |
+| `SERVER_HOST` | Public IP address or DNS name of the EC2 server |
+| `SERVER_USER` | SSH username on the EC2 server |
+| `SERVER_SSH_KEY` | Private SSH key used by GitHub Actions to connect |
 
-This is the home page of e-commerce. It shows a list of products.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/hqiwteg10o8a2cnq0wwi.jpg)
+The EC2 server needs Docker and the Docker Compose plugin installed. The SSH user must be able to run Docker commands. The workflow copies the production Compose file and deploys under `~/amazona`.
 
-### [01:06:30 Part 08- Product Details](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=3990s)
+The production Compose file expects the workflow to have pulled and tagged the published images locally as `amazona-frontend:latest` and `amazona-backend:latest`. For a manual deployment, first pull the images from your Docker Hub account and tag them with those local names, then run:
 
-When the user clicks on a product there should a page to show details about that product. This lesson is all about making an attractive details page.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/csskvzbcmz4ypki2xjgk.jpg)
+```sh
+docker compose -f docker-compose.prod.yml up -d
+```
 
-### [01:30:53 Part 09- Create Node Server](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=5453s)
+## Configuration and security
 
-This part is about Node and Express. They are the popular framework to create a web server using JavaScript language. We will create a MongoDB database and save and retrieve the admin user.
+- The local Compose setup uses MongoDB 7 and persists data in the `mongodb_data` volume.
+- The local setup publishes ports `3000`, `5000`, and `27017` on the host for convenience. Do not expose the database port publicly.
+- The backend has development defaults for the JWT secret and PayPal client ID. Replace demo values before any public deployment.
+- Configure real PayPal or AWS S3 credentials only if you intend to use those integrations. Pass credentials using a secure environment or secret-management system.
+- The demo administrator account and its creation endpoint are not suitable for production use.
+- The included deployment workflow transfers and starts containers on EC2; HTTPS, DNS, firewall hardening, and production-grade database configuration must be set up separately.
 
-### [01:39:52 Part 10- Fetch Server Data](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=5992s)
+## Troubleshooting
 
-In this lesson, we use React Hooks to fetch data from the server. We use the axios library to do this job in a modern async/await style.
+### The website does not open
 
-### [01:47:55 Part 11- Manage State With Redux](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=6475s)
+- Confirm Docker Desktop or Docker Engine is running.
+- Check whether the containers are up with `docker compose ps`.
+- Review startup output with `docker compose logs -f`.
+- Make sure ports `3000` and `5000` are not already in use by another application.
 
-When it comes to handling multiple forms with their data nothing is better than state management. We use Redux in this lesson to handle complex state and keep the app behavior predictable.
+### The API does not return products
 
-### [02:07:11 Part 12- Add Redux To Details](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=7631s)
+- Check backend logs with `docker compose logs -f backend`.
+- Confirm MongoDB is running with `docker compose ps`.
+- Check that the backend uses the Compose service address `mongodb://mongodb:27017/amazona`. From inside a container, `localhost` means that same container, not the MongoDB service.
 
-In this part, we move the details page state to Redux. First, we create reducers then define actions and connect them to the details component.
+### I changed files but the website still looks the same
 
-### [02:29:23 Part 13- Shopping Cart Screen](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=8963s)
+If you are using Docker, rebuild the images and recreate the services:
 
-Shopping Cart is the heart of any e-commerce website. We focus on creating a user-friendly shopping cart using React and Redux.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/fyzf0no5ej1fgxp5972e.png)
+```sh
+docker compose up --build
+```
 
-### [03:08:11 Part 14- Connect MongoDB](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=11291s)
+### I want a fresh local database
 
-This lesson is about persisting data on the MongoDB database. We use mongoose package to create models and save and retrieve data from the database.
+> **Warning:** The following removes all data in the local Compose database.
 
-### [03:21:35 Part 15- Sign In User](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=12095s)
+```sh
+docker compose down --volumes
+docker compose up --build
+```
 
-We need to register the user before redirecting them to the checkout. In this part, we will create forms for getting user info and save them in the database.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/92coj0rezr5508vhfv34.png)
+Only use `--volumes` when you are certain you no longer need the saved database data.
 
-### [03:56:02 Part 16- Manage Products](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=14162s)
+## Project layout
 
-Admin should be able to define products and update the count in stock whenever they like. This page is about managing ECommerce products.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/154a5zk6vfapukjaxwyu.png)
+```text
+.
+├── .github/workflows/ci.yml   # CI checks, image publishing, and EC2 deployment
+├── backend/                   # Express API, routes, models, and Dockerfile
+├── frontend/                  # React app, static assets, Nginx config, and Dockerfile
+├── docker-compose.yml         # Local services (builds images from source)
+├── docker-compose.prod.yml    # Production services (uses prebuilt images)
+└── README.md                  # Project documentation
+```
 
-### [04:38:43 Part 17- Checkout Wizard](https://www.youtube.com/watch?v=Fy9SdZLBTOo&t=16723s)
+## Technology overview
 
-In this part, we implement the checkout wizard including sign in, shipping info, payment method, and place order.
-![Alt Text](https://dev-to-uploads.s3.amazonaws.com/i/l8w3g9mc3ccijt70wpf3.png)
-
-## Only On Udemy
-
-Following parts are on my udemy course. [Get it by 90% discount](https://www.udemy.com/course/build-ecommerce-website-like-amazon-react-node-mongodb/?couponCode=BASIR1)
-
-### Part 18- Order Details Screen
-
-It shows all details about an order includeing shipping, payments and order items. Also it is possible for admin to manage orders like set them as delivered.
-
-### Part 19- Connect to PayPal
-
-This parts create PaypalButton component to show paypal payment button on the screen.
-when users click on it, they will be redirected to paypal website to make the payment.
-after payment users will be redirected to details page of the order.
-
-### Part 20- Manage Order Screen
-
-This is an admin page to manage list of orders. Admin can delete an order or set it as delivered.
-
-### Part 21- User Profile Screen
-
-When user click on thier name on the header menu, this page appears. It consists of two sections. First an profile update form and second order history.
-
-### Part 22- Filter and Sort Products
-
-In the home page, right after header, there is a filter bar to filter products based on their name and description. also it is possible to sort product based on prices and arrivals.
-
-### Part 23- Deploy Website on Heroku
-
-This section explains all steps to publish the ecommerce website on heroku. first you need to create a cloud mongodb and the make an account on heroku.
-
-### Part 24- Rate and Review Products
-
-This part shows list of reviews by users for each products. also it provides a form to enter rating and review for every single product. also it update the avg rating of each product by user ratings.
-
-1. index.html
-2. link fontawesome
-3. Rating.js
-4. create stars based on props.value
-5. show text based on props.text
-6. index.css
-7. style rating, span color gold and last span to gray, link text to blue
-8. HomeScreen.js
-9. use Rating component
-10. ProductScreen.js
-11. use Rating component, wrap it in anchor#reviews
-12. list reviews after product details
-13. create new review form to get rating and reviews
-14. index.css
-15. style reviews
-16. ProductScreen.js
-17. implement submitHandler
-18. productActions.js
-19. create saveProductReview(productId, review)
-20. productConstants.js
-21. create product review constants
-22. productReducers.js
-23. create productReviewSaveReducer
-24. store.js
-25. add productReviewSaveReducer
-26. backend
-27. productRoute.js
-28. router.post('/:id/reviews')
-29. save review in product.reviews
-30. update avg rating
-
-### Part 25- Upload Product Images On Local Server
-
-Admin shoud be able to uploads photos from their computer. This section is about uploading images on local server ans aws s3 cloud server.
-
-1. npm install multer
-2. routes/uploadRoute.js
-3. import express and multer
-4. create disk storage with Date.now().jpg as filename
-5. set upload as multer({ storage })
-6. router.post('/', upload.single('image'))
-7. return req.file.path
-8. server.js
-9. app.use('/api/uploads',uploadRoute)
-10. ProductsScreen.js
-11. create state hook for uploading
-12. create input image file and onChange handler
-13. define handleUploadImage function
-14. prepare file for upload
-15. axios post file as multipart/form-data
-16. set image and set uploading
-17. check result
-
-### Part 26- Upload Product Images On AWS S3
-
-This section is about uploading images amazon aws s3 cloud server.
-
-1. create aws account
-2. open https://s3.console.aws.amazon.com
-3. create public bucket as amazona
-4. create api key and secret
-5. past it into .env as accessKeyId and secretAccessKey
-6. move dotenv to config.js
-7. add accessKeyId and secretAccessKey to config.js
-8. npm install aws-sdk multer-s3
-9. routes/uploadRoute.js
-10. set aws.config.update to config values
-11. create s3 from new aws.S3()
-12. create storageS3 from multerS3 by setting s3, bucket and acl
-13. set uploadS3 as multer({ storage: storageS3 })
-14. router.post('/s3', uploadS3.single('image'))
-15. return req.file.location
-16. ProductsScreen.js
-17. on handleUploadImage set axios.post('api/uploads/s3')
-18. check result on website and s3
-
-## Summary
-
-In this tutorial, we have made an eCommerce website like Amazon. Feel free to change this project based on your needs and add it to your portfolio.
-Also, I will love to hear your comment about this React and Node tutorial. Please share your thoughts here.
+| Area | Tools |
+| --- | --- |
+| Storefront | React, Redux, React Router |
+| API | Node.js, Express |
+| Database | MongoDB, Mongoose |
+| Web serving and proxy | Nginx |
+| Containers | Docker, Docker Compose |
+| Automation | GitHub Actions |
+| Image vulnerability scanning | Trivy |
+| Deployment target | AWS EC2 |

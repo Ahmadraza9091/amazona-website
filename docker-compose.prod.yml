@@ -2,7 +2,7 @@
 services:
 
   frontend:
-    image: YOUR_DOCKERHUB_USERNAME/amazona-frontend:latest
+    image: amazona-frontend:latest
     container_name: amazona-frontend
     ports:
       - "3000:80"
@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: YOUR_DOCKERHUB_USERNAME/amazona-backend:latest
+    image: amazona-backend:latest
     container_name: amazona-backend
     ports:
       - "5000:5000"
@@ -33,4 +33,3 @@ services:
 
 volumes:
   mongodb_data:
-
